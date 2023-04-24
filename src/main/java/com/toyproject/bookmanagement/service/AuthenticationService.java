@@ -15,6 +15,7 @@ import org.springframework.stereotype.Service;
 
 import com.toyproject.bookmanagement.dto.JwtRespDto;
 import com.toyproject.bookmanagement.dto.LoginReqDto;
+import com.toyproject.bookmanagement.dto.auth.PrincipalRespDto;
 import com.toyproject.bookmanagement.dto.auth.SignupReqDto;
 import com.toyproject.bookmanagement.entity.Authority;
 import com.toyproject.bookmanagement.entity.User;
@@ -23,6 +24,7 @@ import com.toyproject.bookmanagement.exception.ErrorMap;
 import com.toyproject.bookmanagement.repository.UserRepository;
 import com.toyproject.bookmanagement.security.jwt.JwtTokenProvider;
 
+import io.jsonwebtoken.Claims;
 import lombok.RequiredArgsConstructor;
 
 @Service
@@ -79,4 +81,17 @@ public class AuthenticationService implements UserDetailsService {
 	
 		return jwtTokenProvider.validateToken(jwtTokenProvider.getToken(accessToken));
 	}
+	
+	public PrincipalRespDto getPrincipal(String accessToken) {
+		Claims claims = jwtTokenProvider.getClaims(jwtTokenProvider.getToken(accessToken));
+		User userEntity = userRepository.findUserByEmail(claims.getSubject());
+		
+		return PrincipalRespDto.builder()
+				.userId(userEntity.getUserId())
+				.email(userEntity.getEmail())
+				.name(userEntity.getName())
+				.authorities((String) claims.get("auth"))
+				.build();
+	}
+	
 }
