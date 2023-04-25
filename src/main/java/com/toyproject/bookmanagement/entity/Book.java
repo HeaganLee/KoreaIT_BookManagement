@@ -26,7 +26,7 @@ public class Book {
 	public SearchBookRespDto toDto() {
 		return SearchBookRespDto.builder()
 				.bookId(bookId)
-				.bookName(bookId)
+				.bookName(bookName)
 				.authorId(authorId)
 				.authorName(author.getAuthorName())
 				.publisherId(pulblisherId)

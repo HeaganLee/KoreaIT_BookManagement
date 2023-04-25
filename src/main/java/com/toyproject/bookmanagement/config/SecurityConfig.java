@@ -7,10 +7,21 @@ import org.springframework.security.config.annotation.web.configuration.EnableWe
 import org.springframework.security.config.annotation.web.configuration.WebSecurityConfigurerAdapter;
 import org.springframework.security.config.http.SessionCreationPolicy;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
+import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
+
+import com.toyproject.bookmanagement.security.JwtAuthenticationEntryPoint;
+import com.toyproject.bookmanagement.security.JwtAuthenticationFilter;
+import com.toyproject.bookmanagement.security.JwtTokenProvider;
+
+import lombok.RequiredArgsConstructor;
 
 @Configuration
 @EnableWebSecurity
+@RequiredArgsConstructor
 public class SecurityConfig extends WebSecurityConfigurerAdapter {
+	
+	private final JwtTokenProvider jwtTokenProvider;
+	private final JwtAuthenticationEntryPoint authenticationEntryPoint;
 	
 	@Bean
 	public BCryptPasswordEncoder passwordEncoder() {
@@ -19,6 +30,7 @@ public class SecurityConfig extends WebSecurityConfigurerAdapter {
 	
 	@Override
 	protected void configure(HttpSecurity http) throws Exception {
+		http.cors();
 		http.csrf().disable();
 		http.httpBasic().disable();
 		http.formLogin().disable();
@@ -26,11 +38,14 @@ public class SecurityConfig extends WebSecurityConfigurerAdapter {
 		http.sessionManagement().sessionCreationPolicy(SessionCreationPolicy.STATELESS);
 		
 		http.authorizeRequests()
-		.antMatchers("/auth/**")
-		.permitAll()
-		.anyRequest()
-		.permitAll();
-//		.authenticated();
+			.antMatchers("/auth/**")
+			.permitAll()
+			.anyRequest()
+			.authenticated()
+			.and()
+			.addFilterBefore(new JwtAuthenticationFilter(jwtTokenProvider), UsernamePasswordAuthenticationFilter.class)
+			.exceptionHandling()
+			.authenticationEntryPoint(authenticationEntryPoint);
 		
 	}
 }

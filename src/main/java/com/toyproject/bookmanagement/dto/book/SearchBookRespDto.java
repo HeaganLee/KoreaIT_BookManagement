@@ -7,7 +7,7 @@ import lombok.Data;
 @Data
 public class SearchBookRespDto {
 	private int bookId;
-	private int bookName;
+	private String bookName;
 	private int authorId;
 	private String authorName;
 	private int publisherId;

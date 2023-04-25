@@ -1,18 +1,24 @@
-package com.toyproject.bookmanagement.security.jwt;
+package com.toyproject.bookmanagement.security;
 
 
 import java.nio.charset.MalformedInputException;
 import java.rmi.server.ExportException;
 import java.security.Key;
+import java.util.ArrayList;
 import java.util.Date;
+import java.util.List;
 
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.Authentication;
+import org.springframework.security.core.authority.SimpleGrantedAuthority;
+import org.springframework.security.core.userdetails.User;
+import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.stereotype.Component;
 import org.springframework.util.StringUtils;
 
 import com.toyproject.bookmanagement.dto.JwtRespDto;
-import com.toyproject.bookmanagement.security.PrincipalUserDetails;
+import com.toyproject.bookmanagement.exception.CustomException;
 
 import io.jsonwebtoken.Claims;
 import io.jsonwebtoken.ExpiredJwtException;
@@ -38,7 +44,6 @@ public class JwtTokenProvider {
 	
 	public JwtRespDto generateToken(Authentication authentication) {
 		
-		String authorities = null;
 		StringBuilder builder = new StringBuilder();
 		
 		authentication.getAuthorities().forEach(authority -> {
@@ -46,13 +51,13 @@ public class JwtTokenProvider {
 		});
 		builder.delete(builder.length() - 1, builder.length());
 		
-		String auhorities = builder.toString();
+		String authorities = builder.toString();
 		
 		Date tokenExprieDate = new Date(new Date().getTime() + (1000 * 60 * 60 * 24)); // 현재시간 + 하루
 		
 		String accessToken = Jwts.builder()
 				.setSubject(authentication.getName())		//토큰의 제목
-				.claim("auth", auhorities)						// auth
+				.claim("auth", authorities)						// auth
 				.setExpiration(tokenExprieDate)						// 토큰만료시간
 				.signWith(key, SignatureAlgorithm.HS256) 	// 토큰 암호화
 				.compact();
@@ -98,7 +103,29 @@ public class JwtTokenProvider {
 				.parseClaimsJws(token)
 				.getBody();
 	}
-
+	
+	public Authentication getAuthentication(String accessToken) {
+		Authentication authentication = null;
+		
+		Claims claims = getClaims(accessToken);
+		if(claims.get("auth") == null) {
+			throw new CustomException("AccessToken에 권한 정보가 없습니다.");
+		}
+		
+		List<SimpleGrantedAuthority> authorities = new ArrayList<>();
+		
+		String auth = claims.get("auth").toString();
+		
+		for(String role: auth.split(",")) {
+			authorities.add(new SimpleGrantedAuthority(role));
+		}
+		
+		
+		UserDetails userDetails = new User (claims.getSubject(), "", authorities);
+		
+		authentication = new UsernamePasswordAuthenticationToken(userDetails, null, authorities);
+		return authentication;
+	}
 	
 	}
 	
