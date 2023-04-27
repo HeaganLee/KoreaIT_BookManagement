@@ -63,6 +63,12 @@ public class BookController {
 		return ResponseEntity.ok().body(bookService.getRentalListByBookId(bookId));
 	}
 	
+	@PostMapping("/book/{bookListId}/rental")
+	public ResponseEntity<?> rentalBook(@PathVariable int bookListId, @RequestBody Map<String, Integer> requestMap) {
+		
+		return ResponseEntity.ok().body(bookService.rentalBook(bookListId, requestMap.get("userId")));
+	}
+	
 	
 	
 	
